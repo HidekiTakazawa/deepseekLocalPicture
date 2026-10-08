@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,9 @@
   <!-- Google Fonts (Outfit, Noto Sans JP, Noto Sans SC) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Outfit:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
 
   <!-- App CSS -->
   <link rel="stylesheet" href="css/style.css?v=7">
@@ -32,6 +35,7 @@
       padding: 1rem !important;
       box-sizing: border-box !important;
     }
+
     .modal-dialog {
       background: var(--bg-card, #ffffff) !important;
       border-radius: var(--radius-lg, 16px) !important;
@@ -45,6 +49,7 @@
       overflow: hidden !important;
       color: var(--text-main, #1e293b) !important;
     }
+
     .modal-header {
       padding: 1.25rem 1.5rem !important;
       border-bottom: 1px solid var(--border-color, #e2e8f0) !important;
@@ -53,11 +58,13 @@
       justify-content: space-between !important;
       background: var(--bg-card-subtle, #f8fafc) !important;
     }
+
     .modal-body {
       padding: 1.5rem !important;
       overflow-y: auto !important;
       flex: 1 !important;
     }
+
     .modal-footer {
       padding: 1rem 1.5rem !important;
       border-top: 1px solid var(--border-color, #e2e8f0) !important;
@@ -72,11 +79,34 @@
   <!-- Vue.js 3 CDN (Prod/Dev) -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 </head>
+
 <body>
   <div id="app" v-cloak>
+    <!-- ライセンス認証モーダル (認証前のみ表示) -->
+    <div v-if="!isAuthenticated" class="modal-backdrop" style="z-index: 999999; background-color: #f0f2f5;">
+      <div class="modal-dialog"
+        style="max-width: 500px; text-align: center; padding: 30px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 10px;">
+        <h2 style="color: #4a90d9; margin-top: 0; font-size: 24px;">🔒 アプリのロック解除</h2>
+        <p style="margin-bottom: 20px;">ご利用にはライセンスキーが必要です。</p>
+        <input type="text" v-model="licenseKeyInput" placeholder="例: TEST-1234" @keyup.enter="login"
+          style="width: 80%; padding: 12px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; margin: 20px 0; text-align: center; letter-spacing: 2px;">
+        <button @click="login" :disabled="isAuthenticating"
+          style="background-color: #4a90d9; color: white; border: none; padding: 12px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%;">
+          {{ isAuthenticating ? '認証中...' : '利用開始' }}
+        </button>
+        <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 14px;">キーをお持ちでない方はこちら</p>
+        <a href="https://stripe.com/jp" target="_blank" style="text-decoration: none;">
+          <button
+            style="background-color: #6772E5; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 80%; margin-top: 10px;">
+            💳 利用権を購入する
+          </button>
+        </a>
+      </div>
+    </div>
     <!-- ヘッダー -->
     <header class="app-header">
-      <div class="header-container">
+      <div class="header-container" v-show="isAuthenticated">
         <div class="logo-section">
           <div class="app-icon">文</div>
           <div class="app-title">
@@ -103,27 +133,34 @@
           <button @click="printLearningMaterial" class="btn-icon" title="学習内容をプリント(PDF)">
             🖨️
           </button>
+          <!-- ログアウト -->
+          <button @click="logout" class="btn btn-outline"
+            style="font-size: 0.82rem; padding: 0.4rem 0.8rem; margin-left: 0.5rem; color: #dc3545; border-color: #dc3545;"
+            title="ライセンスキーを削除してログアウト">
+            ログアウト
+          </button>
         </div>
       </div>
     </header>
 
     <!-- メインコンテンツ -->
-    <main class="main-container">
-      
+    <main class="main-container" v-show="isAuthenticated">
+
       <!-- ステータスバー（未接続時の案内） -->
       <div v-if="!gasUrl" class="status-banner">
         <div class="status-info">
           <span>💡</span>
-          <span><strong>デモモードで動作中:</strong> サンプルデータで全機能を体験できます。独自のDeepSeek APIを利用するには js/config.js にGAS URLを設定してください。</span>
+          <span><strong>デモモードで動作中:</strong> サンプルデータで全機能を体験できます。独自のDeepSeek APIを利用するには js/config.js にGAS
+            URLを設定してください。</span>
         </div>
       </div>
 
       <!-- メイングリッド (左: 画像 & 作文, 右: 単語 / 模範文 / 添削) -->
       <div class="app-grid">
-        
+
         <!-- 左カラム: 写真アップロード & 作文エリア -->
         <div class="grid-column">
-          
+
           <!-- 1. 画像アップロード / プレビューカード -->
           <div class="card">
             <div class="card-header">
@@ -131,14 +168,18 @@
                 <span>🖼️</span> 写真・イラストの選択
               </h2>
               <div class="flex gap-2 items-center">
-                <button @click="openHistoryModal" class="btn btn-outline" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;" title="過去の学習履歴から画像を選択">
+                <button @click="openHistoryModal" class="btn btn-outline"
+                  style="padding: 0.45rem 0.85rem; font-size: 0.82rem;" title="過去の学習履歴から画像を選択">
                   🕒 履歴から選択
                 </button>
-                <button v-if="currentImage && !analysisData" @click="analyzeImage(false)" class="btn btn-primary" :disabled="isAnalyzing" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                <button v-if="currentImage && !analysisData" @click="analyzeImage(false)" class="btn btn-primary"
+                  :disabled="isAnalyzing" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
                   <span v-if="isAnalyzing">解析中...</span>
                   <span v-else>✨ AIで画像を解析</span>
                 </button>
-                <button v-if="currentImage && analysisData" @click="analyzeImage(true)" class="btn btn-outline" :disabled="isAnalyzing" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;" title="スプレッドシートのキャッシュを使わずAIで新しく生成">
+                <button v-if="currentImage && analysisData" @click="analyzeImage(true)" class="btn btn-outline"
+                  :disabled="isAnalyzing" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;"
+                  title="スプレッドシートのキャッシュを使わずAIで新しく生成">
                   <span v-if="isAnalyzing">再解析中...</span>
                   <span v-else>🔄 AIで再解析</span>
                 </button>
@@ -146,11 +187,8 @@
             </div>
 
             <!-- 画像未選択時: ドロップゾーン -->
-            <div v-if="!currentImage" 
-                 class="upload-dropzone" 
-                 @dragover.prevent 
-                 @drop="handleDrop" 
-                 @click="$refs.fileInput.click()">
+            <div v-if="!currentImage" class="upload-dropzone" @dragover.prevent @drop="handleDrop"
+              @click="$refs.fileInput.click()">
               <div class="upload-icon">📷</div>
               <div class="upload-text">クリックまたは画像をドラッグ＆ドロップ</div>
               <div class="upload-subtext">スマホ・PCの写真やイラスト（JPG, PNG, WebP）</div>
@@ -169,7 +207,8 @@
               <div class="preview-container">
                 <img :src="currentImage.previewUrl" :alt="currentImage.name" class="preview-image">
                 <div class="preview-overlay">
-                  <button @click="$refs.fileInput.click()" class="btn-icon" style="background: rgba(0,0,0,0.6); color: white; border: none;" title="別の画像に変更">
+                  <button @click="$refs.fileInput.click()" class="btn-icon"
+                    style="background: rgba(0,0,0,0.6); color: white; border: none;" title="別の画像に変更">
                     🔄
                   </button>
                 </div>
@@ -194,7 +233,8 @@
                 <span>✍️</span> あなたの中国語作文
               </h2>
               <div class="flex items-center gap-2">
-                <span v-if="correctionData" class="badge-tag" style="background: var(--success); color: white; font-weight: 600;">
+                <span v-if="correctionData" class="badge-tag"
+                  style="background: var(--success); color: white; font-weight: 600;">
                   💾 保存済み ({{ correctionData.score }}点)
                 </span>
                 <span class="char-counter">{{ userEssay.length }} 文字</span>
@@ -205,12 +245,8 @@
               写真の内容を中国語で描写してみましょう。「AIに添削してもらう」を押すと、作文と添削結果がブラウザの履歴に保存され、後から何度でも推敲できます。
             </p>
 
-            <textarea 
-              ref="essayTextarea"
-              v-model="userEssay" 
-              class="essay-textarea" 
-              placeholder="例: 我在咖啡厅喝咖啡。咖啡很好喝，我很喜欢看书。"
-              rows="4">
+            <textarea ref="essayTextarea" v-model="userEssay" class="essay-textarea"
+              placeholder="例: 我在咖啡厅喝咖啡。咖啡很好喝，我很喜欢看书。" rows="4">
             </textarea>
 
             <div class="essay-actions">
@@ -218,15 +254,13 @@
                 <button v-if="userEssay" @click="speakChinese(userEssay)" class="btn-icon" title="入力した作文の発音を聴く">
                   🔊
                 </button>
-                <button v-if="userEssay" @click="userEssay = ''; correctionData = null;" class="btn btn-outline" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+                <button v-if="userEssay" @click="userEssay = ''; correctionData = null;" class="btn btn-outline"
+                  style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
                   クリア
                 </button>
               </div>
 
-              <button 
-                @click="checkEssay" 
-                class="btn btn-accent" 
-                :disabled="isCheckingEssay || !userEssay.trim()"
+              <button @click="checkEssay" class="btn btn-accent" :disabled="isCheckingEssay || !userEssay.trim()"
                 style="padding: 0.55rem 1.25rem;">
                 <span v-if="isCheckingEssay">添削中...</span>
                 <span v-else>🤖 AIに添削してもらう</span>
@@ -239,32 +273,25 @@
         <!-- 右カラム: 単語一覧 / 模範作文 / 添削結果タブ -->
         <div class="grid-column">
           <div class="card" style="min-height: 540px;">
-            
+
             <!-- タブナビゲーション -->
             <div class="tab-nav">
-              <button 
-                class="tab-btn" 
-                :class="{ active: activeTab === 'words' }" 
-                @click="activeTab = 'words'">
+              <button class="tab-btn" :class="{ active: activeTab === 'words' }" @click="activeTab = 'words'">
                 <span>📸 単語一覧</span>
-                <span v-if="analysisData && analysisData.words" style="font-size: 0.75rem; background: rgba(0,0,0,0.1); padding: 0.1rem 0.4rem; border-radius: 99px;">
+                <span v-if="analysisData && analysisData.words"
+                  style="font-size: 0.75rem; background: rgba(0,0,0,0.1); padding: 0.1rem 0.4rem; border-radius: 99px;">
                   {{ analysisData.words.length }}
                 </span>
               </button>
 
-              <button 
-                class="tab-btn" 
-                :class="{ active: activeTab === 'model' }" 
-                @click="activeTab = 'model'">
+              <button class="tab-btn" :class="{ active: activeTab === 'model' }" @click="activeTab = 'model'">
                 <span>📖 模範作文</span>
               </button>
 
-              <button 
-                class="tab-btn" 
-                :class="{ active: activeTab === 'correction' }" 
-                @click="activeTab = 'correction'">
+              <button class="tab-btn" :class="{ active: activeTab === 'correction' }" @click="activeTab = 'correction'">
                 <span>✍️ 添削結果</span>
-                <span v-if="correctionData" style="font-size: 0.75rem; background: var(--success); color: white; padding: 0.1rem 0.4rem; border-radius: 99px;">
+                <span v-if="correctionData"
+                  style="font-size: 0.75rem; background: var(--success); color: white; padding: 0.1rem 0.4rem; border-radius: 99px;">
                   {{ correctionData.score }}点
                 </span>
               </button>
@@ -291,7 +318,7 @@
               <!-- タブ1: 単語一覧 -->
               <div v-show="activeTab === 'words' || isPrinting" class="print-section print-order-1">
                 <div v-if="analysisData && analysisData.words && analysisData.words.length > 0">
-                  
+
                   <!-- シーン概要 & キャッシュインジケータ -->
                   <div class="scene-summary-bar">
                     <div v-if="analysisData.scene_description_ja" class="scene-summary">
@@ -308,7 +335,8 @@
                         </div>
                         <div class="flex items-center gap-1 word-actions">
                           <button @click="speakChinese(item.word)" class="action-btn-sm" title="単語の発音を聴く">🔊</button>
-                          <button @click="insertWordToEssay(item.word)" class="action-btn-sm" title="作文欄にこの単語を挿入">＋</button>
+                          <button @click="insertWordToEssay(item.word)" class="action-btn-sm"
+                            title="作文欄にこの単語を挿入">＋</button>
                         </div>
                       </div>
 
@@ -321,7 +349,8 @@
                       <div v-if="item.example_cn" class="word-example">
                         <div class="flex items-center justify-between">
                           <span class="example-cn">{{ item.example_cn }}</span>
-                          <button @click="speakChinese(item.example_cn)" class="action-btn-sm word-example-audio" style="width: 22px; height: 22px; font-size: 0.7rem;">🔊</button>
+                          <button @click="speakChinese(item.example_cn)" class="action-btn-sm word-example-audio"
+                            style="width: 22px; height: 22px; font-size: 0.7rem;">🔊</button>
                         </div>
                         <div class="example-pinyin">{{ item.example_pinyin }}</div>
                         <div class="example-ja">{{ item.example_ja }}</div>
@@ -330,7 +359,8 @@
                   </div>
 
                   <div style="margin-top: 1.25rem; text-align: center;" class="tab-nav-footer">
-                    <button @click="activeTab = 'model'" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.5rem 1.25rem;">
+                    <button @click="activeTab = 'model'" class="btn btn-outline"
+                      style="font-size: 0.85rem; padding: 0.5rem 1.25rem;">
                       📖 模範作文を見る ➔
                     </button>
                   </div>
@@ -343,7 +373,8 @@
                   <p style="font-size: 0.85rem; margin-top: 0.35rem;">
                     写真をアップロードして「✨ AIで画像を解析」をクリックすると、AIが写真内の事物を観察し、中国語の重要単語と例文を抽出します。
                   </p>
-                  <button v-if="currentImage" @click="analyzeImage(false)" class="btn btn-primary" style="margin-top: 1.25rem;">
+                  <button v-if="currentImage" @click="analyzeImage(false)" class="btn btn-primary"
+                    style="margin-top: 1.25rem;">
                     ✨ 今すぐ画像を解析する
                   </button>
                 </div>
@@ -352,18 +383,14 @@
               <!-- タブ2: 模範作文 -->
               <div v-show="activeTab === 'model' || isPrinting" class="print-section print-order-3">
                 <div v-if="analysisData && analysisData.model_essays">
-                  
+
                   <!-- レベル切り替えボタン -->
                   <div class="level-switch">
-                    <button 
-                      class="level-btn" 
-                      :class="{ active: modelLevel === 'beginner' }" 
+                    <button class="level-btn" :class="{ active: modelLevel === 'beginner' }"
                       @click="modelLevel = 'beginner'">
                       🌱 初級（HSK 1-2 相当）
                     </button>
-                    <button 
-                      class="level-btn" 
-                      :class="{ active: modelLevel === 'intermediate' }" 
+                    <button class="level-btn" :class="{ active: modelLevel === 'intermediate' }"
                       @click="modelLevel = 'intermediate'">
                       🌿 中級（HSK 3-4 相当）
                     </button>
@@ -373,7 +400,8 @@
                   <div v-show="modelLevel === 'beginner' || isPrinting" class="model-essay-box print-model-box">
                     <div class="essay-box-header">
                       <h3>{{ analysisData.model_essays.beginner.level_title || '初級模範文' }}</h3>
-                      <button @click="speakChinese(analysisData.model_essays.beginner.essay_cn)" class="btn btn-outline audio-btn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                      <button @click="speakChinese(analysisData.model_essays.beginner.essay_cn)"
+                        class="btn btn-outline audio-btn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
                         🔊 全文を聴く
                       </button>
                     </div>
@@ -403,7 +431,8 @@
                   <div v-show="modelLevel === 'intermediate' || isPrinting" class="model-essay-box print-model-box">
                     <div class="essay-box-header">
                       <h3>{{ analysisData.model_essays.intermediate.level_title || '中級模範文' }}</h3>
-                      <button @click="speakChinese(analysisData.model_essays.intermediate.essay_cn)" class="btn btn-outline audio-btn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                      <button @click="speakChinese(analysisData.model_essays.intermediate.essay_cn)"
+                        class="btn btn-outline audio-btn" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
                         🔊 全文を聴く
                       </button>
                     </div>
@@ -444,10 +473,11 @@
               <!-- タブ3: 作文添削結果 -->
               <div v-show="activeTab === 'correction' || isPrinting" class="print-section print-order-2">
                 <div v-if="correctionData">
-                  
+
                   <!-- スコアカード -->
                   <div class="score-card">
-                    <div class="score-number">{{ correctionData.score }}<span style="font-size: 1.2rem; font-weight: 500;">点</span></div>
+                    <div class="score-number">{{ correctionData.score }}<span
+                        style="font-size: 1.2rem; font-weight: 500;">点</span></div>
                     <div class="score-comment">
                       <div style="font-weight: 700; margin-bottom: 0.2rem;">👨‍🏫 AI教師からのコメント</div>
                       <div>{{ correctionData.score_comment }}</div>
@@ -455,16 +485,20 @@
                   </div>
 
                   <!-- 添削後の完成文 -->
-                  <div class="correction-section" style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                  <div class="correction-section"
+                    style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                     <div class="flex items-center justify-between" style="margin-bottom: 0.5rem;">
-                      <span style="font-size: 0.85rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 0.35rem;">
+                      <span
+                        style="font-size: 0.85rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 0.35rem;">
                         <span>✨</span> 添削後の完成中国語文
                       </span>
-                      <button @click="speakChinese(correctionData.corrected_essay)" class="btn btn-outline audio-btn" style="padding: 0.3rem 0.7rem; font-size: 0.78rem;">
+                      <button @click="speakChinese(correctionData.corrected_essay)" class="btn btn-outline audio-btn"
+                        style="padding: 0.3rem 0.7rem; font-size: 0.78rem;">
                         🔊 音声を聴く
                       </button>
                     </div>
-                    <div style="font-family: var(--font-chinese); font-size: 1.15rem; font-weight: 600; line-height: 1.7; color: var(--text-main); margin-bottom: 0.35rem;">
+                    <div
+                      style="font-family: var(--font-chinese); font-size: 1.15rem; font-weight: 600; line-height: 1.7; color: var(--text-main); margin-bottom: 0.35rem;">
                       {{ correctionData.corrected_essay }}
                     </div>
                     <div style="font-size: 0.88rem; color: var(--primary); margin-bottom: 0.5rem;">
@@ -476,28 +510,35 @@
                   </div>
 
                   <!-- 修正箇所詳細 -->
-                  <div v-if="correctionData.corrections && correctionData.corrections.length > 0" class="correction-section">
+                  <div v-if="correctionData.corrections && correctionData.corrections.length > 0"
+                    class="correction-section">
                     <div class="section-subtitle">
                       <span>🔍</span> 修正箇所の解説
                     </div>
                     <div v-for="(corr, idx) in correctionData.corrections" :key="idx" class="diff-card">
                       <div class="diff-original">元の文: {{ corr.original }}</div>
-                      <div class="diff-corrected">修正後: {{ corr.corrected }} <span style="font-size: 0.82rem; font-weight: normal; color: var(--primary);">({{ corr.pinyin }})</span></div>
+                      <div class="diff-corrected">修正後: {{ corr.corrected }} <span
+                          style="font-size: 0.82rem; font-weight: normal; color: var(--primary);">({{ corr.pinyin
+                          }})</span></div>
                       <div class="diff-reason">{{ corr.reason }}</div>
                     </div>
                   </div>
 
                   <!-- より自然な表現 (ネイティブTips) -->
-                  <div v-if="correctionData.better_expressions && correctionData.better_expressions.length > 0" class="correction-section">
+                  <div v-if="correctionData.better_expressions && correctionData.better_expressions.length > 0"
+                    class="correction-section">
                     <div class="section-subtitle">
                       <span>💡</span> ネイティブ度UPの表現
                     </div>
                     <div v-for="(exp, idx) in correctionData.better_expressions" :key="idx" class="diff-card">
                       <div class="flex items-center justify-between">
                         <div style="font-family: var(--font-chinese); font-weight: 700; color: var(--text-main);">
-                          {{ exp.expression }} <span style="font-size: 0.82rem; color: var(--primary); font-weight: 500;">({{ exp.pinyin }})</span>
+                          {{ exp.expression }} <span
+                            style="font-size: 0.82rem; color: var(--primary); font-weight: 500;">({{ exp.pinyin
+                            }})</span>
                         </div>
-                        <button @click="speakChinese(exp.expression)" class="action-btn-sm audio-btn" style="width: 22px; height: 22px; font-size: 0.7rem;">🔊</button>
+                        <button @click="speakChinese(exp.expression)" class="action-btn-sm audio-btn"
+                          style="width: 22px; height: 22px; font-size: 0.7rem;">🔊</button>
                       </div>
                       <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">
                         {{ exp.meaning }}
@@ -506,7 +547,8 @@
                   </div>
 
                   <!-- 文法ワンポイント -->
-                  <div v-if="correctionData.grammar_tips && correctionData.grammar_tips.length > 0" class="correction-section">
+                  <div v-if="correctionData.grammar_tips && correctionData.grammar_tips.length > 0"
+                    class="correction-section">
                     <div class="section-subtitle">
                       <span>📚</span> 日本人学習者への文法アドバイス
                     </div>
@@ -561,18 +603,12 @@
 
           <!-- 画像一覧グリッド -->
           <div v-else-if="historyFiles && historyFiles.length > 0" class="drive-gallery-grid">
-            <div 
-              v-for="file in historyFiles" 
-              :key="file.id" 
-              class="drive-gallery-card has-cache">
+            <div v-for="file in historyFiles" :key="file.id" class="drive-gallery-card has-cache">
               <div class="drive-card-thumb-wrapper" @click="selectHistoryFile(file)" style="cursor: pointer;">
-                <img 
-                  :src="file.base64" 
-                  :alt="file.name" 
-                  class="drive-card-thumb" 
-                  loading="lazy">
+                <img :src="file.base64" :alt="file.name" class="drive-card-thumb" loading="lazy">
                 <div v-if="file.analysisData" class="drive-card-cache-tag">⚡ 解析済み</div>
-                <div v-if="file.userEssay" class="drive-card-essay-tag" style="top: 0.5rem; bottom: auto; background: var(--success);">
+                <div v-if="file.userEssay" class="drive-card-essay-tag"
+                  style="top: 0.5rem; bottom: auto; background: var(--success);">
                   ✍️ 作文あり <span v-if="file.correctionData">({{ file.correctionData.score }}点)</span>
                 </div>
               </div>
@@ -584,10 +620,13 @@
                 <div class="drive-card-date">{{ new Date(file.dateCreated).toLocaleString() }}</div>
               </div>
               <div class="flex gap-2" style="width: 100%; margin-top: auto;">
-                <button @click="selectHistoryFile(file)" class="btn btn-primary" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; flex: 1;">
+                <button @click="selectHistoryFile(file)" class="btn btn-primary"
+                  style="padding: 0.35rem 0.5rem; font-size: 0.78rem; flex: 1;">
                   再開する
                 </button>
-                <button @click="deleteHistoryItem(file.id)" class="btn btn-outline" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; color: var(--danger); border-color: var(--danger);" title="削除">
+                <button @click="deleteHistoryItem(file.id)" class="btn btn-outline"
+                  style="padding: 0.35rem 0.5rem; font-size: 0.78rem; color: var(--danger); border-color: var(--danger);"
+                  title="削除">
                   削除
                 </button>
               </div>
@@ -613,11 +652,7 @@
 
     <!-- トースト通知コンテナ -->
     <div class="toast-container">
-      <div 
-        v-for="toast in toasts" 
-        :key="toast.id" 
-        class="toast" 
-        :class="toast.type">
+      <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type">
         <span>{{ toast.message }}</span>
       </div>
     </div>
@@ -629,4 +664,5 @@
   <!-- アプリメインスクリプト -->
   <script src="js/app.js?v=10"></script>
 </body>
+
 </html>
