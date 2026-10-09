@@ -116,12 +116,7 @@
         </div>
 
         <div class="header-actions">
-          <!-- デモモード / GAS接続ステータス -->
-          <div class="btn btn-outline" style="font-size: 0.82rem; padding: 0.4rem 0.8rem; cursor: default;">
-            <span class="status-dot" :class="{ 'connected': gasUrl, 'demo': isDemoMode }"></span>
-            <span v-if="gasUrl">GAS連携中</span>
-            <span v-else>デモモード (GAS未接続)</span>
-          </div>
+
 
           <!-- テーマ切替 -->
           <button @click="toggleTheme" class="btn-icon" :title="isDarkTheme ? 'ライトモードに切替' : 'ダークモードに切替'">
@@ -146,14 +141,7 @@
     <!-- メインコンテンツ -->
     <main class="main-container" v-show="isAuthenticated">
 
-      <!-- ステータスバー（未接続時の案内） -->
-      <div v-if="!gasUrl" class="status-banner">
-        <div class="status-info">
-          <span>💡</span>
-          <span><strong>デモモードで動作中:</strong> サンプルデータで全機能を体験できます。独自のDeepSeek APIを利用するには js/config.js にGAS
-            URLを設定してください。</span>
-        </div>
-      </div>
+
 
       <!-- メイングリッド (左: 画像 & 作文, 右: 単語 / 模範文 / 添削) -->
       <div class="app-grid">
@@ -218,12 +206,7 @@
 
             <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" class="hidden">
 
-            <!-- サンプルプリセット選択バー -->
-            <div class="sample-images-bar">
-              <span>サンプルを試す:</span>
-              <button class="sample-chip" @click="loadSamplePreset('cafe')">☕ カフェ</button>
-              <button class="sample-chip" @click="loadSamplePreset('park')">🌳 公園</button>
-            </div>
+
           </div>
 
           <!-- 2. 作文入力エディタカード -->
